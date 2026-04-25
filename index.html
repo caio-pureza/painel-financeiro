@@ -372,12 +372,12 @@ footer{margin-top:52px;padding-top:24px;border-top:1px solid var(--border);color
 <footer>Plano financeiro · Caio Pureza · Sincronizado com Firebase · Atualizado em 25 de abril de 2026</footer>
 </div>
 
-<!-- FIREBASE SDK -->
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
-import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+<!-- FIREBASE SDK compat (funciona em HTML estático) -->
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
 
-const firebaseConfig = {
+<script>
+var firebaseConfig = {
   apiKey: "AIzaSyD12chA8TOCeklFYRpkIBAB_Zhf_wLJxQ0",
   authDomain: "meu-planejamento-finance-fc93d.firebaseapp.com",
   projectId: "meu-planejamento-finance-fc93d",
@@ -386,40 +386,53 @@ const firebaseConfig = {
   appId: "1:27303726650:web:6236f8d0a476134c97ef03"
 };
 
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
-const docRef = doc(db, 'usuarios', 'caio');
-
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+var docRef = db.collection('usuarios').doc('caio');
 var saveTimer = null;
 
-window._fbSave = function(data) {
+function setSyncStatus(status, msg) {
+  var dot = document.getElementById('sync-dot');
+  var txt = document.getElementById('sync-status');
+  if (dot) dot.className = 'sync-dot ' + status;
+  if (txt) txt.textContent = msg;
+}
+
+function fbSave(data) {
   setSyncStatus('saving', 'Salvando na nuvem...');
   clearTimeout(saveTimer);
   saveTimer = setTimeout(function() {
-    setDoc(docRef, data).then(function() {
+    docRef.set(data).then(function() {
       setSyncStatus('ok', '☁️ Sincronizado — ' + new Date().toLocaleTimeString('pt-BR'));
     }).catch(function(e) {
-      setSyncStatus('err', '❌ Erro ao salvar: ' + e.message);
+      setSyncStatus('err', '❌ Erro: ' + e.message);
+      console.error('Firebase save error:', e);
     });
   }, 800);
-};
+}
 
-// Listen for real-time changes from any device
-onSnapshot(docRef, function(snap) {
-  if (snap.exists()) {
-    var remote = snap.data();
-    // Only update if remote is newer (has data)
-    if (remote && Object.keys(remote).length > 0) {
-      window._remoteData = remote;
-      if (window._appReady) {
-        window._applyRemote(remote);
+function fbListen() {
+  docRef.onSnapshot(function(snap) {
+    if (snap.exists) {
+      var remote = snap.data();
+      if (remote && Object.keys(remote).length > 0) {
+        // Only apply if different from local to avoid loop
+        var localStr = JSON.stringify(S);
+        var remoteStr = JSON.stringify(remote);
+        if (localStr !== remoteStr) {
+          S = remote;
+          ensureDefaults();
+          localStorage.setItem('caio-v4', JSON.stringify(S));
+          init();
+        }
       }
     }
-  }
-  setSyncStatus('ok', '☁️ Sincronizado — ' + new Date().toLocaleTimeString('pt-BR'));
-}, function(err) {
-  setSyncStatus('err', '❌ Sem conexão com Firebase');
-});
+    setSyncStatus('ok', '☁️ Sincronizado — ' + new Date().toLocaleTimeString('pt-BR'));
+  }, function(err) {
+    setSyncStatus('err', '❌ Sem conexão');
+    console.error('Firebase listen error:', err);
+  });
+}
 </script>
 
 <script>
@@ -493,7 +506,7 @@ function ensureDefaults() {
 
 function save() {
   localStorage.setItem('caio-v4', JSON.stringify(S));
-  if (window._fbSave) window._fbSave(JSON.parse(JSON.stringify(S)));
+  fbSave(JSON.parse(JSON.stringify(S)));
 }
 
 window._applyRemote = function(remote) {
@@ -789,10 +802,10 @@ function init(){
   renderOverview();renderCaution();renderDebts();renderBudget();renderReserve();renderLogs();renderTips();renderSim();
   var ld=document.getElementById('log-date');if(ld)ld.valueAsDate=new Date();
   window._appReady=true;
-  if(window._remoteData)window._applyRemote(window._remoteData);
 }
 
 loadState();
+fbListen();
 init();
 </script>
 </body>
