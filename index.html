@@ -207,6 +207,7 @@ footer{margin-top:48px;padding-top:22px;border-top:1px solid var(--border);color
 <section class="sec" id="dues">
   <h2>Vencimentos</h2>
   <p class="sint">Boletos e faturas. Marque como pago quando quitar. Recorrentes sao gerados automaticamente todo mes.</p>
+  <div style="margin-bottom:16px"><button class="btn-ghost" onclick="resetDues()" style="font-size:12px;padding:6px 14px;border-color:var(--red);color:var(--red)">Resetar vencimentos</button></div>
   <div id="dues-list"></div>
   <h3>Adicionar vencimento</h3>
   <div class="weekly">
@@ -525,11 +526,18 @@ var RECORRENTES = [
 ];
 
 var DEF_DUES = [
-  {id:'due_casag_mar', name:'CASAG marco',             dia:25, val:922,   type:'boleto', pago:false, mes:2,  descricao:'Venceu 25/03', recId:'rec_casag'},
-  {id:'due_casag_abr', name:'CASAG abril',             dia:25, val:922,   type:'boleto', pago:false, mes:3,  descricao:'Venceu 25/04', recId:'rec_casag'},
-  {id:'due_consorcio', name:'Consorcio Porto Seguro',  dia:15, val:966,   type:'boleto', pago:false, mes:3,  descricao:'Venceu 15/04', recId:'rec_consorcio'},
-  {id:'due_aluguel',   name:'Aluguel',                 dia:15, val:2900,  type:'boleto', pago:true,  mes:3,  descricao:'Pago em abril', recId:'rec_aluguel'},
-  {id:'due_c6_abr',    name:'Fatura C6 abril',         dia:20, val:1273,  type:'fatura', pago:false, mes:3,  descricao:'Saldo parcial em aberto', recId:'rec_c6'},
+  {id:'due_casag_mar',  name:'CASAG marco',            dia:25, val:922,   type:'boleto', pago:false, mes:2, descricao:'Venceu 25/03', recId:'rec_casag'},
+  {id:'due_casag_abr',  name:'CASAG abril',            dia:25, val:922,   type:'boleto', pago:false, mes:3, descricao:'Venceu 25/04', recId:'rec_casag'},
+  {id:'due_consorcio',  name:'Consorcio Porto Seguro', dia:15, val:966,   type:'boleto', pago:false, mes:3, descricao:'Venceu 15/04', recId:'rec_consorcio'},
+  {id:'due_aluguel',    name:'Aluguel',                dia:15, val:2900,  type:'boleto', pago:true,  mes:3, descricao:'Pago em abril', recId:'rec_aluguel'},
+  {id:'due_agua_abr',   name:'Saneago agua abril',     dia:20, val:194.28,type:'boleto', pago:true,  mes:3, descricao:'Pago em 27/04', recId:'rec_saneago'},
+  {id:'due_gas_abr',    name:'Gas abril',              dia:15, val:46.96, type:'boleto', pago:true,  mes:3, descricao:'Pago em 27/04', recId:'rec_gas'},
+  {id:'due_tim_abr',    name:'Tim abril',              dia:20, val:92.99, type:'boleto', pago:true,  mes:3, descricao:'Pago em 28/04', recId:'rec_tim'},
+  {id:'due_brad_abr',   name:'Fatura Bradesco abril',  dia:10, val:536,   type:'fatura', pago:true,  mes:3, descricao:'Pago em abril', recId:'rec_bradesco'},
+  {id:'due_c6_abr',     name:'Fatura C6 abril',        dia:20, val:1273,  type:'fatura', pago:false, mes:3, descricao:'Saldo parcial em aberto', recId:'rec_c6'},
+  {id:'due_energia_mai',name:'Energia eletrica maio',  dia:20, val:247.03,type:'boleto', pago:false, mes:4, descricao:'Vence 20/05', recId:'rec_energia'},
+  {id:'due_gas_mai',    name:'Gas maio',               dia:15, val:34.27, type:'boleto', pago:false, mes:4, descricao:'Vence 15/05', recId:'rec_gas'}
+];:3,  descricao:'Saldo parcial em aberto', recId:'rec_c6'},
   {id:'due_brad_mai',  name:'Fatura Bradesco maio',    dia:10, val:536,   type:'fatura', pago:false, mes:4,  descricao:'', recId:'rec_bradesco'},
   {id:'due_energia_mai',name:'Energia eletrica maio',  dia:20, val:247.03,type:'boleto', pago:false, mes:4,  descricao:'Vence 20/05', recId:'rec_energia'},
   {id:'due_agua_abr',  name:'Saneago agua abril',      dia:20, val:194.28,type:'boleto', pago:true,  mes:3,  descricao:'Pago em 27/04', recId:'rec_saneago'},
@@ -723,6 +731,16 @@ function markPaid(id) {
     renderDues();
     renderDuesAlerts();
   }
+}
+
+function resetDues() {
+  var msg = 'Resetar todos os vencimentos para os valores padrao?';
+  if (!confirm(msg)) return;
+  S.dues = JSON.parse(JSON.stringify(DEF_DUES));
+  save();
+  renderDues();
+  renderDuesAlerts();
+  alert('Vencimentos resetados!');
 }
 
 function remDue(id) {
