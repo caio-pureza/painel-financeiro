@@ -525,6 +525,11 @@ var RECORRENTES = [
   {id:'rec_bradesco',  name:'Fatura Bradesco',     dia:10, tipo:'fatura', valPadrao:0}
 ];
 
+/* ============================================================
+   BUG CORRIGIDO: DEF_DUES estava com fragmento de objeto
+   solto após o fechamento do array (];\n:3, ...) que causava
+   SyntaxError e impedia o registro dos event listeners das tabs.
+   ============================================================ */
 var DEF_DUES = [
   {id:'due_casag_mar',  name:'CASAG marco',            dia:25, val:922,   type:'boleto', pago:false, mes:2, descricao:'Venceu 25/03', recId:'rec_casag'},
   {id:'due_casag_abr',  name:'CASAG abril',            dia:25, val:922,   type:'boleto', pago:false, mes:3, descricao:'Venceu 25/04', recId:'rec_casag'},
@@ -535,15 +540,9 @@ var DEF_DUES = [
   {id:'due_tim_abr',    name:'Tim abril',              dia:20, val:92.99, type:'boleto', pago:true,  mes:3, descricao:'Pago em 28/04', recId:'rec_tim'},
   {id:'due_brad_abr',   name:'Fatura Bradesco abril',  dia:10, val:536,   type:'fatura', pago:true,  mes:3, descricao:'Pago em abril', recId:'rec_bradesco'},
   {id:'due_c6_abr',     name:'Fatura C6 abril',        dia:20, val:1273,  type:'fatura', pago:false, mes:3, descricao:'Saldo parcial em aberto', recId:'rec_c6'},
+  {id:'due_brad_mai',   name:'Fatura Bradesco maio',   dia:10, val:536,   type:'fatura', pago:false, mes:4, descricao:'', recId:'rec_bradesco'},
   {id:'due_energia_mai',name:'Energia eletrica maio',  dia:20, val:247.03,type:'boleto', pago:false, mes:4, descricao:'Vence 20/05', recId:'rec_energia'},
   {id:'due_gas_mai',    name:'Gas maio',               dia:15, val:34.27, type:'boleto', pago:false, mes:4, descricao:'Vence 15/05', recId:'rec_gas'}
-];:3,  descricao:'Saldo parcial em aberto', recId:'rec_c6'},
-  {id:'due_brad_mai',  name:'Fatura Bradesco maio',    dia:10, val:536,   type:'fatura', pago:false, mes:4,  descricao:'', recId:'rec_bradesco'},
-  {id:'due_energia_mai',name:'Energia eletrica maio',  dia:20, val:247.03,type:'boleto', pago:false, mes:4,  descricao:'Vence 20/05', recId:'rec_energia'},
-  {id:'due_agua_abr',  name:'Saneago agua abril',      dia:20, val:194.28,type:'boleto', pago:true,  mes:3,  descricao:'Pago em 27/04', recId:'rec_saneago'},
-  {id:'due_gas_mai',   name:'Gas maio',                dia:15, val:34.27, type:'boleto', pago:false, mes:4,  descricao:'Vence 15/05'},
-  {id:'due_gas_abr',   name:'Gas abril',               dia:15, val:46.96,  type:'boleto', pago:true,  mes:3, descricao:'Pago em 27/04'},
-  {id:'due_tim_abr',   name:'Tim abril',               dia:20, val:92.99,  type:'boleto', pago:true,  mes:3, descricao:'Pago em 28/04', recId:'rec_tim'}
 ];
 
 var DEFS = {};
@@ -772,7 +771,6 @@ function addDue() {
   var rec = document.getElementById('due-recorrente').value === 'sim';
   if (!n) { alert('Digite o nome.'); return; }
   if (!S.dues) S.dues = [];
-  var hoje = new Date();
   var id = rec ? ('rec_custom_' + Date.now()) : ('due_' + Date.now());
   S.dues.push({id:id, name:n, dia:dia, val:val, type:type, pago:false, mes:mes, descricao:'', recorrente:rec});
   if (rec) {
@@ -844,9 +842,9 @@ function dCard(d) {
   var ds = S.debts[d.id] || {};
   var ip = ds.paid;
   var val = S.vals[d.id] != null ? S.vals[d.id] : d.defVal;
-  var vh = (d.editable && !ip) ? '<span class="editable" id="dv-'+d.id+'"></span>' : '<span class="debt-val '+(ip?'g':'')+'">'+fmtBRL(val)+'</span>'+(!d.editable?'<span class="lock">lock</span>':'');
+  var vh = (d.editable && !ip) ? '<span class="editable" id="dv-'+d.id+'"></span>' : '<span class="debt-val '+(ip?'g':'')+'">'+ fmtBRL(val)+'</span>'+(!d.editable?'<span class="lock">lock</span>':'');
   var dh = ip ? '<span class="debt-paid-on">Pago em '+(ds.date||'-')+'</span>' : '<span class="debt-date-lbl">Data:</span><input type="date" class="debt-date-in" id="dd-'+d.id+'" value="'+(ds.date||'')+'" onchange="setDD(\''+d.id+'\',this.value)">';
-  return '<div class="debt-item '+(ip?'paid':'')+'"><div class="chk '+(ip?'on':'')+'" onclick="togDebt(\''+d.id+'\')"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4.5L4 7.5L10 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="debt-body"><div class="debt-name">'+d.name+'</div>'+(d.desc?'<div class="debt-desc">'+d.desc+'</div>':'')+'</div><div class="debt-r"><span class="badge '+d.badge+'">'+d.bl+'</span>'+vh+'<div class="debt-date-wrap">'+dh+'</div></div></div>';
+  return '<div class="debt-item '+(ip?'paid':'')+'"><div class="chk '+(ip?'on':'') +'" onclick="togDebt(\''+d.id+'\')"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4.5L4 7.5L10 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="debt-body"><div class="debt-name">'+d.name+'</div>'+(d.desc?'<div class="debt-desc">'+d.desc+'</div>':'')+'</div><div class="debt-r"><span class="badge '+d.badge+'">'+d.bl+'</span>'+vh+'<div class="debt-date-wrap">'+dh+'</div></div></div>';
 }
 
 function togDebt(id) {
